@@ -4,6 +4,7 @@ const cors = require("cors");
 const http = require("http");
 const socketIO = require("socket.io");
 const dotenv = require("dotenv");
+const socketHandler = require("./socket/socketHandler");
 
 dotenv.config();
 
@@ -26,12 +27,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/rides", require("./routes/rideRoutes"));
 
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+// Initialize socket handler
+socketHandler(io);
 
 mongoose
   .connect(process.env.MONGO_URI)
