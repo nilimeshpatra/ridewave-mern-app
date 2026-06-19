@@ -24,6 +24,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/rides", require("./routes/rideRoutes"));
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
