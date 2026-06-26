@@ -1,55 +1,38 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
-
+const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, phone, role } = req.body;
     const userExists = await User.findOne({ email });
-    if (userExists)
-      return res.status(400).json({ message: "User already exists" });
+    if (userExists) return res.status(400).json({ message: "User already exists" });
     const user = await User.create({ name, email, password, phone, role });
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+    res.status(201).json({ _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, createdAt: user.createdAt, token: generateToken(user._id) });
+  } catch (error) { res.status(500).json({ message: error.message }); }
 };
-
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password)))
-      return res.status(401).json({ message: "Invalid email or password" });
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+    if (!user || !(await user.matchPassword(password))) return res.status(401).json({ message: "Invalid email or password" });
+    res.json({ _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, createdAt: user.createdAt, token: generateToken(user._id) });
+  } catch (error) { res.status(500).json({ message: error.message }); }
 };
-
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  } catch (error) { res.status(500).json({ message: error.message }); }
 };
-
-module.exports = { registerUser, loginUser, getUserProfile };
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.phone) user.phone = req.body.phone;
+    const updated = await user.save();
+    res.json({ _id: updated._id, name: updated.name, email: updated.email, phone: updated.phone, role: updated.role, createdAt: updated.createdAt });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile };
